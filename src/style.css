@@ -1,0 +1,4 @@
+.bordered {
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--border-radius);
+}
