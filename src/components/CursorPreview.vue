@@ -13,6 +13,16 @@ const canvas = ref<HTMLCanvasElement | null>(null);
 const aniStyleElem = ref<HTMLStyleElement | null>(null);
 const aniAnimRef = ref<number | null>(null);
 
+function base64ToUint8Array(base64: string): Uint8Array {
+  const binaryString = window.atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
 watch([() => cursorSlotKey, () => cursorFile, canvas], async () => {
   if (aniStyleElem.value) {
     document.head.removeChild(aniStyleElem.value);
@@ -32,7 +42,10 @@ watch([() => cursorSlotKey, () => cursorFile, canvas], async () => {
   if (cursorFile.type !== 'ani' || !canvas.value) return;
 
   try {
-    const bytes = Uint8Array.fromBase64(cursorFile.base64Data.split(',')[1]!);
+    const base64Content = cursorFile.base64Data.split(',')[1];
+    if (!base64Content) return;
+    
+    const bytes = base64ToUint8Array(base64Content);
     aniStyleElem.value = document.createElement('style');
     aniStyleElem.value.innerText = convertAniBinaryToCSS(`#${cursorSlotKey}-preview`, bytes);
     document.head.appendChild(aniStyleElem.value);
