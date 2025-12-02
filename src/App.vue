@@ -14,6 +14,15 @@ const infDownloadUrl = ref<string>();
 const zipDownloadUrl = ref<string>();
 const zipDialog = ref<HTMLDialogElement | null>(null);
 
+const invalidCharRegex = /[\/\\:*?"<>|]/g;
+const getInvalidChars = (s: string) => {
+  const regexMatches = (s.match(invalidCharRegex) ?? []) as string[];
+  const nonANSIChars = [...s].filter(c => c.charCodeAt(0) > 127);
+  return regexMatches.concat(nonANSIChars).reduce((acc, c) => `${acc} ${c}`, '');
+};
+const packNameInvalidChars = computed(() => getInvalidChars(packName.value));
+const dirNameInvalidChars = computed(() => getInvalidChars(dirName.value));
+
 const onGenerateInf = () => {
   if (infDownloadUrl.value) URL.revokeObjectURL(infDownloadUrl.value);
   infString.value = getInstallInfString(packName.value, dirName.value);
@@ -28,11 +37,15 @@ const onGeneratePackZip = async () => {
   zipDialog.value?.showModal();
 };
 
-const fileList = computed(() =>
-  getEnabledCursorFiles().reduce((acc, cur) => {
+const fileList = computed(() => {
+  let inclFilenames: Record<string, true> = {};
+  return getEnabledCursorFiles().reduce((acc, cur) => {
+    if (inclFilenames[cur.filename]) return acc;
+    inclFilenames[cur.filename] = true;
     if (!acc) return cur.filename;
     return `${acc}\n${cur.filename}`;
-  }, ""));
+  }, "");
+});
 
 function clearAll() {
   for (const slot of Object.keys(cursorSlots)) {
@@ -51,16 +64,28 @@ onBeforeUnmount(() => {
 
 <template>
   <main>
+    <header>
+      <h3>cursor install.inf utility</h3>
+    </header>
+
     <section>
       <fieldset>
         <legend>cursor pack info</legend>
         <label title="name of cursor scheme that will appear in control panel">
           cursor pack name
-          <input id="pack-name-input" v-model="packName" type="text" placeholder="cursor pack name" />
+          <input id="pack-name-input" v-model="packName" type="text" placeholder="cursor pack name"
+            :aria-invalid="!!packNameInvalidChars" />
+          <small v-if="!!packNameInvalidChars" title="due to limitations in the INF file format">
+            pack name cannot contain: {{ packNameInvalidChars }}
+          </small>
         </label>
         <label title="folder that will contain the cursors on installation">
           cursor directory name (leave blank to use pack name)
-          <input id="pack-dir-input" v-model="dirName" type="text" placeholder="cursor directory name" />
+          <input id="pack-dir-input" v-model="dirName" type="text" placeholder="cursor directory name"
+            :aria-invalid="!!dirNameInvalidChars" />
+          <small v-if="!!dirNameInvalidChars" title="due to limitations in the INF file format">
+            directory name cannot contain: {{ dirNameInvalidChars }}
+          </small>
         </label>
       </fieldset>
     </section>
@@ -79,14 +104,23 @@ onBeforeUnmount(() => {
     </section>
 
     <section class="btns">
-      <button @click="onGenerateInf">generate install.inf</button>
-      <button @click="onGeneratePackZip">generate {{ packName }}.zip</button>
+      <button @click="onGenerateInf" :disabled="!!packNameInvalidChars || !!dirNameInvalidChars"
+        :title="!!packNameInvalidChars || !!dirNameInvalidChars ? 'please check cursor pack info' : ''">
+        generate inf
+      </button>
+      <button @click="onGeneratePackZip" :disabled="!!packNameInvalidChars || !!dirNameInvalidChars"
+        :title="!!packNameInvalidChars || !!dirNameInvalidChars ? 'please check cursor pack info' : ''">
+        generate zip
+      </button>
     </section>
   </main>
 
   <footer>
     <hr />
-    <p>oyasumi</p>
+    <div class="creds">
+      <span>made with vue, vite-pwa, ani-cursor, jszip and &lt;3</span>
+      <a target="_blank" href="https://github.com/r3dacted42/cursor-inf-util">github repo</a>
+    </div>
   </footer>
 
   <dialog ref="infDialog">
@@ -97,11 +131,11 @@ onBeforeUnmount(() => {
       <p>save this file in the same directory/folder with all the cursor files. <br />
         it can be used to easily install the cursor pack by right clicking on the <code>install.inf</code> file and
         selecting "Install".</p>
-      <textarea disabled>{{ infString }}</textarea>
+      <textarea readonly>{{ infString }}</textarea>
     </main>
     <footer class="btns">
       <a :href="infDownloadUrl" download="install.inf">
-        <button>💾 download install.inf</button>
+        <button>💾 download <code>install.inf</code></button>
       </a>
       <button type="button" @click="infDialog?.close()">close</button>
     </footer>
@@ -117,12 +151,12 @@ onBeforeUnmount(() => {
         selecting "Install".</p>
       <label>
         it contains the following files:
-        <textarea disabled>{{ fileList + "\n" }}install.inf</textarea>
+        <textarea readonly>{{ fileList + "\n" }}install.inf</textarea>
       </label>
     </main>
     <footer class="btns">
       <a :href="zipDownloadUrl" :download="`${packName}.zip`">
-        <button>💾 download {{ packName }}.zip</button>
+        <button>💾 download <code>{{ packName }}.zip</code></button>
       </a>
       <button type="button" @click="zipDialog?.close()">close</button>
     </footer>
@@ -132,6 +166,10 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+input[aria-invalid="true"] {
+  border-color: red;
+}
+
 .slots {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
@@ -146,10 +184,10 @@ onBeforeUnmount(() => {
   }
 }
 
-.btns {
+.creds {
+  margin-bottom: 1rem;
   display: flex;
-  gap: 1rem;
-  justify-content: center;
-  margin-top: 1rem;
+  flex-direction: column;
+  place-items: center;
 }
 </style>

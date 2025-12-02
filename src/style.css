@@ -2,3 +2,10 @@
   border: var(--border-width) solid var(--border-color);
   border-radius: var(--border-radius);
 }
+
+.btns {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
+}
