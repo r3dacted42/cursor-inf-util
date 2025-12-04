@@ -19,7 +19,6 @@ export default defineConfig({
       name: 'cursor install.inf utility',
       short_name: 'cur-inf-util',
       description: 'utility to easily generate install.inf files for cursor packs or complete cursor pack zip files',
-      theme_color: '#242424',
       display: 'standalone',
       scope: '/cursor-inf-util/',
       start_url: '/cursor-inf-util/',

@@ -66,9 +66,9 @@ function showInstallPrompt() {
 
 const title = computed(() => {
   if (offlineReady.value || !!installPrompt.value)
-    return 'App ready to work offline'
+    return 'app ready to work offline'
   if (needRefresh.value)
-    return 'New content available, click on reload button to update.'
+    return 'new content available, click on reload button to update.'
   return ''
 })
 
@@ -86,7 +86,7 @@ function close() {
         {{ title }}
       </span>
     </div>
-    <div class="buttons">
+    <div class="btns">
       <button v-if="needRefresh" type="button" @click="updateServiceWorker()">
         reload
       </button>
@@ -115,9 +115,5 @@ function close() {
 
 .pwa-toast .message {
   margin-bottom: 8px;
-}
-
-.pwa-toast .buttons {
-  display: flex;
 }
 </style>
