@@ -1,11 +1,12 @@
 import { VitePWA } from 'vite-plugin-pwa';
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import mkcert from 'vite-plugin-mkcert'
 
 // https://vitejs.dev/config/
 export default defineConfig({
   base: '/cursor-inf-util/',
-  plugins: [vue(), VitePWA({
+  plugins: [vue(), mkcert(), VitePWA({
     registerType: 'prompt',
     injectRegister: false,
 
@@ -17,8 +18,11 @@ export default defineConfig({
     manifest: {
       name: 'cursor install.inf utility',
       short_name: 'cur-inf-util',
-      description: 'utility to easily generate install.inf file for cursor packs',
-      theme_color: '#ffffff',
+      description: 'utility to easily generate install.inf files for cursor packs or complete cursor pack zip files',
+      theme_color: '#242424',
+      display: 'standalone',
+      scope: '/cursor-inf-util/',
+      start_url: '/cursor-inf-util/',
     },
 
     workbox: {

@@ -118,7 +118,7 @@ onBeforeUnmount(() => {
   <footer>
     <hr />
     <div class="creds">
-      <span>made with vue, vite-pwa, ani-cursor, jszip and &lt;3</span>
+      <span>made with ❤ by <a target="_blank" href="https://github.com/r3dacted42">r3dacted42</a></span>
       <a target="_blank" href="https://github.com/r3dacted42/cursor-inf-util">github repo</a>
     </div>
   </footer>

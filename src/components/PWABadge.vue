@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRegisterSW } from 'virtual:pwa-register/vue'
+import { useEventListener } from '@vueuse/core'
 
 // periodic sync is disabled, change the value to enable it, the period is in milliseconds
 // You can remove onRegisteredSW callback and registerPeriodicSync function
@@ -50,8 +51,21 @@ const { offlineReady, needRefresh, updateServiceWorker } = useRegisterSW({
   },
 })
 
+const installPrompt = ref<any>(null);
+
+useEventListener('beforeinstallprompt' as keyof WindowEventMap, (e) => {
+  e.preventDefault();
+  installPrompt.value = e;
+});
+
+function showInstallPrompt() {
+  if (!installPrompt.value) return;
+  installPrompt.value.prompt();
+  installPrompt.value = null;
+}
+
 const title = computed(() => {
-  if (offlineReady.value)
+  if (offlineReady.value || !!installPrompt.value)
     return 'App ready to work offline'
   if (needRefresh.value)
     return 'New content available, click on reload button to update.'
@@ -61,22 +75,26 @@ const title = computed(() => {
 function close() {
   offlineReady.value = false
   needRefresh.value = false
+  installPrompt.value = null;
 }
 </script>
 
 <template>
-  <div v-if="offlineReady || needRefresh" class="pwa-toast" aria-labelledby="toast-message" role="alert">
+  <div v-if="offlineReady || needRefresh || !!installPrompt" class="pwa-toast" aria-labelledby="toast-message" role="alert">
     <div class="message">
       <span id="toast-message">
         {{ title }}
       </span>
     </div>
     <div class="buttons">
-      <button v-if="needRefresh" type="button" class="reload" @click="updateServiceWorker()">
-        Reload
+      <button v-if="needRefresh" type="button" @click="updateServiceWorker()">
+        reload
+      </button>
+      <button v-if="!!installPrompt" type="button" @click="showInstallPrompt">
+        install
       </button>
       <button type="button" @click="close">
-        Close
+        close
       </button>
     </div>
   </div>
@@ -101,9 +119,5 @@ function close() {
 
 .pwa-toast .buttons {
   display: flex;
-}
-
-.pwa-toast button.reload {
-  display: block;
 }
 </style>
