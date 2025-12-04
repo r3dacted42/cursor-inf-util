@@ -80,7 +80,7 @@ function close() {
 </script>
 
 <template>
-  <div v-if="offlineReady || needRefresh || !!installPrompt" class="pwa-toast" aria-labelledby="toast-message" role="alert">
+  <div v-if="offlineReady || needRefresh || !!installPrompt" class="pwa-toast bordered" aria-labelledby="toast-message" role="alert">
     <div class="message">
       <span id="toast-message">
         {{ title }}
