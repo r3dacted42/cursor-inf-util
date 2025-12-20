@@ -1,19 +1,19 @@
 // https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API/File_drag_and_drop
 <script setup lang="ts">
 import { useEventListener, useLocalStorage } from '@vueuse/core';
-import { ref, useTemplateRef } from 'vue';
+import { computed, ref, useTemplateRef } from 'vue';
 import type { CursorSlot } from '../types';
 import { defaultCursorFile } from '../lib';
 import CursorPreview from './CursorPreview.vue';
 
-const { cursorSlotKey } = defineProps<{
+const { cursorSlotKey, cursorSlotName } = defineProps<{
   cursorSlotKey: CursorSlot,
   cursorSlotName: string,
 }>();
 
 const dropZone = useTemplateRef("dropZone");
 const fileInput = useTemplateRef("fileInput");
-const cursorFile = useLocalStorage(`cursor-file-${cursorSlotKey}`, { ...defaultCursorFile });
+const cursorFile = useLocalStorage(`cursor-file-${cursorSlotKey as string}`, { ...defaultCursorFile });
 const dropZoneLabel = ref('not selected');
 const invalidDialog = ref<HTMLDialogElement | null>(null);
 
@@ -90,14 +90,17 @@ useEventListener(dropZone, "drop", handlers.dropZone.handleDrop);
 useEventListener(window, "dragover", handlers.window.handleDragOver);
 useEventListener(window, "drop", handlers.window.handleDrop);
 useEventListener(fileInput, "change", handlers.fileInput.handleChange);
+
+const slotName = computed(() => cursorFile.value.filename
+  ? cursorFile.value.filename : cursorSlotName);
 </script>
 
 <template>
   <div class="cursor-drop-zone bordered">
     <div class="slot-label">
       <span></span>
-      <span>
-        {{ `${cursorFile.filename ? cursorFile.filename : cursorSlotName}` }}
+      <span :title="`${slotName} (${cursorSlotName})`" class="slot-name">
+        {{ slotName }}
       </span>
       <button class="btn" type="reset" @click.prevent="onDelete" :disabled="!cursorFile.base64Data">
         &#x1F5D1;
@@ -106,7 +109,7 @@ useEventListener(fileInput, "change", handlers.fileInput.handleChange);
 
     <label ref="dropZone" class="bordered drop-zone" :title="cursorSlotName">
       <span v-if="!cursorFile.base64Data">{{ dropZoneLabel }}</span>
-      <CursorPreview v-else :cursor-slot-key="cursorSlotKey" :cursorFile="cursorFile" />
+      <CursorPreview v-else :cursor-slot-key="cursorSlotKey as string" :cursorFile="cursorFile" />
       <input ref="fileInput" type="file" :id="`${cursorSlotName}-input`" accept=".cur, .ani" />
     </label>
   </div>
@@ -131,7 +134,7 @@ useEventListener(fileInput, "change", handlers.fileInput.handleChange);
   flex-direction: column;
   align-items: stretch;
   text-align: center;
-  width: 100%;
+  max-width: 100%;
   height: min-content;
   padding: var(--border-radius);
 }
@@ -139,6 +142,13 @@ useEventListener(fileInput, "change", handlers.fileInput.handleChange);
 .slot-label {
   display: flex;
   justify-content: space-between;
+
+  .slot-name {
+    white-space: nowrap;
+    word-break: break-all;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
   .btn {
     border-radius: 0.1rem;

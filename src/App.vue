@@ -2,10 +2,10 @@
 import PWABadge from './components/PWABadge.vue';
 import CursorDropZone from './components/CursorDropZone.vue';
 import { useLocalStorage } from '@vueuse/core';
-import cursorSlots from './assets/cursorSlots';
-import { defaultCursorFile, getCursorPackZipUrl, getEnabledCursorFiles, getInstallInfString } from './lib';
+import { cursorSlots, defaultCursorFile, getCursorPackZipUrl, getCursors, getInstallInfString } from './lib';
 import { computed, onBeforeUnmount, ref } from 'vue';
 
+const helpDialog = ref<HTMLDialogElement | null>(null);
 const packName = useLocalStorage('cursor-pack-name', 'my cool cursorpack');
 const dirName = useLocalStorage('cursor-dir-name', '');
 const infString = ref<string>();
@@ -39,8 +39,8 @@ const onGeneratePackZip = async () => {
 
 const fileList = computed(() => {
   let inclFilenames: Record<string, true> = {};
-  return getEnabledCursorFiles().reduce((acc, cur) => {
-    if (inclFilenames[cur.filename]) return acc;
+  return Object.values(getCursors()).reduce((acc, cur) => {
+    if (!cur || inclFilenames[cur.filename] || !cur.base64Data) return acc;
     inclFilenames[cur.filename] = true;
     if (!acc) return cur.filename;
     return `${acc}\n${cur.filename}`;
@@ -65,7 +65,12 @@ onBeforeUnmount(() => {
 <template>
   <main>
     <header>
-      <h3>cursor install.inf utility</h3>
+      <div class="heading">
+        <h3>
+          cursor install.inf utility
+        </h3>
+        <button type="button" @click="helpDialog?.showModal()">❔</button>
+      </div>
     </header>
 
     <section>
@@ -123,6 +128,25 @@ onBeforeUnmount(() => {
     </div>
   </footer>
 
+  <dialog ref="helpDialog">
+    <header>
+      <h3>how to use this utility?</h3>
+    </header>
+    <main>
+      <p>drag and drop cursors from your cursor pack into the designated slots. <br />
+        when done, you can:
+      </p>
+      <ul>
+        <li>click `generate inf` to get only the `Install.inf` file for the pack</li>
+        <li>click `generate zip` to get all the cursor files along with the installer <br/>
+          file together in an archive</li>
+      </ul>
+    </main>
+    <footer class="btns">
+      <button type="button" @click="helpDialog?.close()">close</button>
+    </footer>
+  </dialog>
+
   <dialog ref="infDialog">
     <header>
       <h3>download <code>install.inf</code> file</h3>
@@ -166,13 +190,20 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+.heading {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+
 input[aria-invalid="true"] {
   border-color: red;
 }
 
 .slots {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.5rem;
 
   @media (max-width: 800px) {

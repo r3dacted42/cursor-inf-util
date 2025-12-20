@@ -65,10 +65,10 @@ function showInstallPrompt() {
 }
 
 const title = computed(() => {
-  if (offlineReady.value || !!installPrompt.value)
-    return 'app ready to work offline'
   if (needRefresh.value)
     return 'new content available, click on reload button to update.'
+  if (offlineReady.value || !!installPrompt.value)
+    return 'app ready to work offline'
   return ''
 })
 

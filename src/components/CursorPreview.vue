@@ -44,12 +44,12 @@ watch([() => cursorSlotKey, () => cursorFile, canvas], async () => {
   try {
     const base64Content = cursorFile.base64Data.split(',')[1];
     if (!base64Content) return;
-    
+
     const bytes = base64ToUint8Array(base64Content);
     aniStyleElem.value = document.createElement('style');
     aniStyleElem.value.innerText = convertAniBinaryToCSS(`#${cursorSlotKey}-preview`, bytes);
     document.head.appendChild(aniStyleElem.value);
-    
+
     const ctx = canvas.value.getContext('2d');
     if (!ctx) {
       console.warn('Failed to get 2D context for ANI cursor preview');
@@ -69,10 +69,18 @@ watch([() => cursorSlotKey, () => cursorFile, canvas], async () => {
       })
     );
 
-    canvas.value.width = Math.max(aniData.metadata.iWidth,
-      frames.reduce((maxW, img) => Math.max(maxW, img.width), 0));
-    canvas.value.height = Math.max(aniData.metadata.iHeight,
-      frames.reduce((maxH, img) => Math.max(maxH, img.height), 0));
+    const bitmapSize = {
+      width: Math.max(aniData.metadata.iWidth,
+        frames.reduce((maxW, img) => Math.max(maxW, img.width), 0)),
+      height: Math.max(aniData.metadata.iHeight,
+        frames.reduce((maxH, img) => Math.max(maxH, img.height), 0)),
+    };
+    const canvasSize = {
+      width: Math.min(bitmapSize.width, 48),
+      height: Math.min(bitmapSize.height, 48),
+    };
+    canvas.value.width = canvasSize.width;
+    canvas.value.height = canvasSize.height;
 
     let frameIdx = 0;
     let lastTime = 0;
@@ -92,7 +100,10 @@ watch([() => cursorSlotKey, () => cursorFile, canvas], async () => {
       if (time - lastTime >= durationMs) {
         ctx.clearRect(0, 0, canvas.value.width, canvas.value.height);
         if (frames[actualFrameIdx]) {
-          ctx.drawImage(frames[actualFrameIdx]!, 0, 0);
+          ctx.drawImage(frames[actualFrameIdx]!,
+            0, 0, bitmapSize.width, bitmapSize.height,
+            0, 0, canvasSize.width, canvasSize.height,
+          );
         }
 
         frameIdx = (frameIdx + 1) % totalSteps;
