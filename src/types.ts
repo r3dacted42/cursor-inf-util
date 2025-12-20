@@ -1,4 +1,4 @@
-import cursorSlots from "./assets/cursorSlots";
+import { cursorSlots } from "./lib";
 
 export type CursorFileType = 'cur' | 'ani' | 'unknown';
 
